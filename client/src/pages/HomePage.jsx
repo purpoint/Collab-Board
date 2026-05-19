@@ -68,109 +68,97 @@ export const HomePage = () => {
   }
 
   const inp = (name) => ({
-    width: '100%',
-    padding: '13px 16px',
-    background: '#060d1a',
-    border: `1px solid ${focused === name ? '#06b6d4' : '#1a2d45'}`,
-    borderRadius: '10px',
-    color: '#f0f6ff',
-    fontSize: '14px',
-    fontFamily: 'Instrument Sans, sans-serif',
-    outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-    boxShadow: focused === name ? '0 0 0 3px rgba(6,182,212,0.1)' : 'none',
-    caretColor: '#06b6d4',
+    width: '100%', padding: '12px 14px',
+    background: '#030810',
+    border: `1px solid ${focused === name ? 'var(--cyan)' : 'var(--border-2)'}`,
+    borderRadius: '8px', color: 'var(--text-1)',
+    fontSize: '13px', fontFamily: 'JetBrains Mono, monospace',
+    outline: 'none', transition: 'all 0.2s',
+    boxShadow: focused === name ? '0 0 0 3px rgba(0,200,255,0.08)' : 'none',
+    caretColor: 'var(--cyan)',
   })
 
-  const seg = (active, col = '#06b6d4') => ({
-    flex: 1, padding: '9px 0', borderRadius: '8px', border: 'none',
-    background: active ? `${col}18` : 'transparent',
-    outline: active ? `1px solid ${col}55` : '1px solid transparent',
-    color: active ? col : '#334560',
-    fontSize: '11px', fontFamily: 'JetBrains Mono, monospace',
+  const seg = (active, col = 'var(--cyan)') => ({
+    flex: 1, padding: '8px 0', borderRadius: '6px', border: 'none',
+    background: active ? `rgba(0,200,255,0.08)` : 'transparent',
+    outline: active ? `1px solid rgba(0,200,255,0.3)` : '1px solid transparent',
+    color: active ? col : 'var(--text-3)',
+    fontSize: '10px', fontFamily: 'JetBrains Mono, monospace',
     fontWeight: '500', letterSpacing: '1px', textTransform: 'uppercase',
-    cursor: 'pointer', transition: 'all 0.2s ease',
+    cursor: 'pointer', transition: 'all 0.2s',
   })
 
   return (
     <div style={{
       minHeight: '100vh', display: 'flex',
       alignItems: 'center', justifyContent: 'center',
-      background: '#02040b', position: 'relative', overflow: 'hidden',
+      background: 'var(--void)', position: 'relative', overflow: 'hidden',
     }}>
-      {/* grid background */}
+      {/* grid */}
       <div style={{
         position: 'absolute', inset: 0,
         backgroundImage: `
-          linear-gradient(rgba(20,35,60,0.5) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(20,35,60,0.5) 1px, transparent 1px)
+          linear-gradient(rgba(14,31,48,0.4) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(14,31,48,0.4) 1px, transparent 1px)
         `,
         backgroundSize: '44px 44px',
       }} />
 
-      {/* glow orbs */}
+      {/* scan lines */}
       <div style={{
-        position: 'absolute', top: '-10%', left: '-5%',
-        width: '500px', height: '500px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%)',
-        pointerEvents: 'none',
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 3px)',
       }} />
+
+      {/* glow */}
       <div style={{
-        position: 'absolute', bottom: '-15%', right: '-5%',
-        width: '600px', height: '400px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%)',
+        position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)',
+        width: '800px', height: '600px', borderRadius: '50%',
+        background: 'radial-gradient(ellipse, rgba(0,200,255,0.04) 0%, transparent 60%)',
         pointerEvents: 'none',
       }} />
 
       {/* card */}
-      <div style={{
-        position: 'relative', zIndex: 10,
-        width: '400px',
-        background: 'linear-gradient(160deg, #0a1525 0%, #070e1c 100%)',
-        border: '1px solid #1a2d45',
-        borderRadius: '20px',
-        padding: '36px 36px 32px',
-        boxShadow: '0 0 0 1px rgba(6,182,212,0.04), 0 32px 80px rgba(0,0,0,0.7)',
+      <div className="fade-up" style={{
+        position: 'relative', zIndex: 10, width: '380px',
+        background: 'linear-gradient(160deg, var(--elevated) 0%, var(--deep) 100%)',
+        border: '1px solid var(--border-2)',
+        borderRadius: '16px', padding: '32px',
+        boxShadow: '0 0 0 1px rgba(0,200,255,0.03), 0 32px 80px rgba(0,0,0,0.8), var(--shadow-cyan)',
       }}>
 
-        {/* top accent line */}
+        {/* top glow line */}
         <div style={{
-          position: 'absolute', top: 0, left: '20%', right: '20%', height: '1px',
-          background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.9), rgba(6,182,212,0.9), transparent)',
-          borderRadius: '1px',
+          position: 'absolute', top: 0, left: '15%', right: '15%', height: '1px',
+          background: 'linear-gradient(90deg, transparent, var(--cyan), transparent)',
         }} />
 
         {/* logo */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        <div className="fade-up-1" style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: '48px', height: '48px', borderRadius: '14px', marginBottom: '14px',
-            background: 'linear-gradient(135deg, rgba(124,58,237,0.25), rgba(6,182,212,0.25))',
-            border: '1px solid rgba(124,58,237,0.5)',
-            boxShadow: '0 0 20px rgba(124,58,237,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
-            fontSize: '22px',
+            width: '44px', height: '44px', borderRadius: '12px', marginBottom: '12px',
+            background: 'linear-gradient(135deg, rgba(0,200,255,0.15), rgba(136,85,255,0.15))',
+            border: '1px solid rgba(0,200,255,0.3)',
+            boxShadow: '0 0 20px rgba(0,200,255,0.15)', fontSize: '20px',
           }}>⬡</div>
-
           <div style={{
-            fontFamily: 'Cabinet Grotesk, sans-serif',
-            fontSize: '26px', fontWeight: '900',
-            letterSpacing: '-0.8px', marginBottom: '5px',
-            background: 'linear-gradient(135deg, #ffffff 0%, #7a9cc0 100%)',
+            fontFamily: 'Space Grotesk, sans-serif',
+            fontSize: '24px', fontWeight: '700',
+            letterSpacing: '-0.5px', marginBottom: '4px',
+            background: 'linear-gradient(135deg, #ffffff, #6888aa)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>CollabBoard</div>
-
-          <div style={{
-            fontSize: '10px', letterSpacing: '2.5px',
-            color: '#1e3050',
-            fontFamily: 'JetBrains Mono, monospace',
-          }}>REAL-TIME · MULTI-USER · CANVAS</div>
+          <div style={{ fontSize: '9px', letterSpacing: '3px', color: 'var(--text-3)' }}>
+            REAL-TIME · MULTI-USER · CANVAS
+          </div>
         </div>
 
         {/* auth tabs */}
-        <div style={{
+        <div className="fade-up-2" style={{
           display: 'flex', gap: '3px', padding: '3px',
-          background: '#030810', borderRadius: '10px',
-          border: '1px solid #0f1e30', marginBottom: '18px',
+          background: 'var(--void)', borderRadius: '8px',
+          border: '1px solid var(--border-1)', marginBottom: '16px',
         }}>
           <button style={seg(isRegister)}  onClick={() => { setIsRegister(true);  setError('') }}>Register</button>
           <button style={seg(!isRegister)} onClick={() => { setIsRegister(false); setError('') }}>Login</button>
@@ -180,108 +168,80 @@ export const HomePage = () => {
         {error && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '8px',
-            background: 'rgba(239,68,68,0.07)',
-            border: '1px solid rgba(239,68,68,0.2)',
-            borderRadius: '8px', padding: '10px 14px', marginBottom: '14px',
-            color: '#fca5a5', fontSize: '12px',
-            fontFamily: 'JetBrains Mono, monospace',
-          }}>
-            ⚠ {error}
-          </div>
+            background: 'rgba(255,51,85,0.06)', border: '1px solid rgba(255,51,85,0.2)',
+            borderRadius: '7px', padding: '9px 12px', marginBottom: '12px',
+            color: 'var(--red)', fontSize: '11px',
+          }}>⚠ {error}</div>
         )}
 
-        {/* credentials */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-          <input
-            style={inp('username')} placeholder="username"
-            value={username} type="text" autoComplete="off"
+        {/* inputs */}
+        <div className="fade-up-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+          <input style={inp('username')} placeholder="username" value={username} type="text" autoComplete="off"
             onChange={e => setUsername(e.target.value)}
-            onFocus={() => setFocused('username')}
-            onBlur={() => setFocused(null)}
+            onFocus={() => setFocused('username')} onBlur={() => setFocused(null)}
           />
-          <input
-            style={inp('password')} placeholder="password"
-            value={password} type="password"
+          <input style={inp('password')} placeholder="password" value={password} type="password"
             onChange={e => setPassword(e.target.value)}
-            onFocus={() => setFocused('password')}
-            onBlur={() => setFocused(null)}
+            onFocus={() => setFocused('password')} onBlur={() => setFocused(null)}
           />
         </div>
 
         {/* divider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-          <div style={{ flex: 1, height: '1px', background: '#0f1e30' }} />
-          <span style={{ fontSize: '9px', color: '#1e3050', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '2px' }}>BOARD</span>
-          <div style={{ flex: 1, height: '1px', background: '#0f1e30' }} />
+        <div className="fade-up-4" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-1)' }} />
+          <span style={{ fontSize: '8px', color: 'var(--text-3)', letterSpacing: '2px' }}>BOARD</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-1)' }} />
         </div>
 
-        {/* board mode tabs */}
-        <div style={{
+        {/* board mode */}
+        <div className="fade-up-4" style={{
           display: 'flex', gap: '3px', padding: '3px',
-          background: '#030810', borderRadius: '10px',
-          border: '1px solid #0f1e30', marginBottom: '12px',
+          background: 'var(--void)', borderRadius: '8px',
+          border: '1px solid var(--border-1)', marginBottom: '10px',
         }}>
-          <button style={seg(mode === 'create', '#10b981')} onClick={() => { setMode('create'); setError('') }}>+ Create</button>
-          <button style={seg(mode === 'join',   '#10b981')} onClick={() => { setMode('join');   setError('') }}>→ Join</button>
+          <button style={seg(mode === 'create', 'var(--green)')} onClick={() => { setMode('create'); setError('') }}>+ Create</button>
+          <button style={seg(mode === 'join',   'var(--green)')} onClick={() => { setMode('join');   setError('') }}>→ Join</button>
         </div>
 
         {/* board input */}
-        <div style={{ marginBottom: '20px' }}>
+        <div className="fade-up-5" style={{ marginBottom: '16px' }}>
           <input
             style={inp('board')}
             placeholder={mode === 'create' ? 'board name...' : 'paste board id...'}
             value={mode === 'create' ? boardName : boardId}
             onChange={e => mode === 'create' ? setBoardName(e.target.value) : setBoardId(e.target.value)}
-            onFocus={() => setFocused('board')}
-            onBlur={() => setFocused(null)}
+            onFocus={() => setFocused('board')} onBlur={() => setFocused(null)}
             onKeyDown={e => e.key === 'Enter' && (mode === 'create' ? handleCreate() : handleJoin())}
           />
           {mode === 'join' && (
-            <p style={{
-              fontSize: '10px', color: '#1e3050',
-              fontFamily: 'JetBrains Mono, monospace',
-              marginTop: '6px', paddingLeft: '2px'
-            }}>
-              find the id in the board url after /board/
+            <p style={{ fontSize: '9px', color: 'var(--text-3)', marginTop: '5px', paddingLeft: '2px' }}>
+              copy the board id from the url after /board/
             </p>
           )}
         </div>
 
-        {/* CTA button */}
-        <button
-          onClick={mode === 'create' ? handleCreate : handleJoin}
-          disabled={loading}
-          style={{
-            width: '100%', padding: '14px',
-            background: loading
-              ? '#0a1525'
-              : 'linear-gradient(135deg, #7c3aed 0%, #2563eb 50%, #06b6d4 100%)',
-            border: loading ? '1px solid #1a2d45' : 'none',
-            borderRadius: '12px',
-            color: loading ? '#334560' : '#ffffff',
-            fontSize: '12px',
-            fontFamily: 'JetBrains Mono, monospace',
-            fontWeight: '600', letterSpacing: '2px',
-            textTransform: 'uppercase',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.25s ease',
-            boxShadow: loading ? 'none' : '0 4px 24px rgba(124,58,237,0.4), 0 0 60px rgba(6,182,212,0.1)',
-          }}
-          onMouseEnter={e => {
-            if (!loading) {
-              e.currentTarget.style.transform = 'translateY(-1px)'
-              e.currentTarget.style.boxShadow = '0 8px 32px rgba(124,58,237,0.5), 0 0 80px rgba(6,182,212,0.15)'
-            }
-          }}
-          onMouseLeave={e => {
-            if (!loading) {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 4px 24px rgba(124,58,237,0.4), 0 0 60px rgba(6,182,212,0.1)'
-            }
-          }}
-        >
-          {loading ? '⟳  connecting...' : mode === 'create' ? '⬡  Create & Enter Board' : '→  Enter Board'}
-        </button>
+        {/* CTA */}
+        <div className="fade-up-6">
+          <button
+            onClick={mode === 'create' ? handleCreate : handleJoin}
+            disabled={loading}
+            style={{
+              width: '100%', padding: '13px',
+              background: loading ? 'var(--elevated)' : 'linear-gradient(135deg, #0088cc, #00c8ff, #8855ff)',
+              border: loading ? '1px solid var(--border-1)' : 'none',
+              borderRadius: '10px',
+              color: loading ? 'var(--text-3)' : '#fff',
+              fontSize: '11px', fontFamily: 'JetBrains Mono, monospace',
+              fontWeight: '600', letterSpacing: '2px', textTransform: 'uppercase',
+              cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.25s',
+              boxShadow: loading ? 'none' : '0 4px 24px rgba(0,200,255,0.3)',
+            }}
+            onMouseEnter={e => { if (!loading) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,200,255,0.4)' }}}
+            onMouseLeave={e => { if (!loading) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,200,255,0.3)' }}}
+          >
+            {loading ? '⟳  connecting...' : mode === 'create' ? '⬡  Create & Enter' : '→  Enter Board'}
+          </button>
+        </div>
 
       </div>
     </div>
