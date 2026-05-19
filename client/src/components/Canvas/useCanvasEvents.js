@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { simplifyPath } from '../../utils/simplifyPath.js'
 
@@ -17,20 +17,21 @@ export const useCanvasEvents = (canvasRef, tool, color, fillColor, strokeWidth, 
     }
   }
 
-  useEffect(() => {
-    const handleKey = (e) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
-        onDeleteShape(selectedId)
-        setSelectedId(null)
-      }
+  const handleKey = useCallback((e) => {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+      onDeleteShape(selectedId)
+      setSelectedId(null)
     }
+  }, [selectedId, onDeleteShape])
+
+  useEffect(() => {
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [selectedId, onDeleteShape])
+  }, [handleKey])
 
   const onMouseDown = (e) => {
     const point = getPoint(e)
-    isDrawing.current = true
+    isDrawing.current  = true
     startPoint.current = point
 
     if (tool === 'pencil') {
@@ -45,9 +46,9 @@ export const useCanvasEvents = (canvasRef, tool, color, fillColor, strokeWidth, 
     if (tool === 'pencil') {
       pencilPoints.current.push(point)
       setActiveShape({
-        shapeId: 'preview',
-        type: 'pencil',
-        points: [...pencilPoints.current],
+        shapeId:     'preview',
+        type:        'pencil',
+        points:      [...pencilPoints.current],
         strokeColor: color,
         strokeWidth,
       })
@@ -55,12 +56,12 @@ export const useCanvasEvents = (canvasRef, tool, color, fillColor, strokeWidth, 
     }
 
     setActiveShape({
-      shapeId: 'preview',
-      type: tool,
-      x: startPoint.current.x,
-      y: startPoint.current.y,
-      width:  point.x - startPoint.current.x,
-      height: point.y - startPoint.current.y,
+      shapeId:     'preview',
+      type:        tool,
+      x:           startPoint.current.x,
+      y:           startPoint.current.y,
+      width:       point.x - startPoint.current.x,
+      height:      point.y - startPoint.current.y,
       strokeColor: color,
       fillColor,
       strokeWidth,
@@ -73,13 +74,20 @@ export const useCanvasEvents = (canvasRef, tool, color, fillColor, strokeWidth, 
     const point = getPoint(e)
 
     if (tool === 'pencil') {
+      // need at least 2 points to draw a line
+      if (pencilPoints.current.length < 2) {
+        setActiveShape(null)
+        pencilPoints.current = []
+        return
+      }
+
       const shape = {
-        shapeId: uuidv4(),
-        type: 'pencil',
-        points: simplifyPath(pencilPoints.current, 2),
+        shapeId:     uuidv4(),
+        type:        'pencil',
+        points:      simplifyPath(pencilPoints.current, 2),
         strokeColor: color,
         strokeWidth,
-        zIndex: Date.now(),
+        zIndex:      Date.now(),
       }
       pencilPoints.current = []
       setActiveShape(null)
@@ -87,17 +95,25 @@ export const useCanvasEvents = (canvasRef, tool, color, fillColor, strokeWidth, 
       return
     }
 
+    // ignore tiny accidental clicks
+    const dx = point.x - startPoint.current.x
+    const dy = point.y - startPoint.current.y
+    if (Math.abs(dx) < 3 && Math.abs(dy) < 3) {
+      setActiveShape(null)
+      return
+    }
+
     const shape = {
-      shapeId: uuidv4(),
-      type: tool,
-      x: startPoint.current.x,
-      y: startPoint.current.y,
-      width:  point.x - startPoint.current.x,
-      height: point.y - startPoint.current.y,
+      shapeId:     uuidv4(),
+      type:        tool,
+      x:           startPoint.current.x,
+      y:           startPoint.current.y,
+      width:       dx,
+      height:      dy,
       strokeColor: color,
       fillColor,
       strokeWidth,
-      zIndex: Date.now(),
+      zIndex:      Date.now(),
     }
 
     setActiveShape(null)

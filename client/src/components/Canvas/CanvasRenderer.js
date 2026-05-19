@@ -2,11 +2,11 @@ export const renderBoard = (ctx, shapes, activeShape, selectedId) => {
   const canvas = ctx.canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  // deep dark background
+  // background
   ctx.fillStyle = '#03050a'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  // dot grid — subtle blue-gray dots
+  // dot grid
   ctx.fillStyle = 'rgba(30, 48, 80, 0.7)'
   const spacing = 28
   for (let x = spacing; x < canvas.width; x += spacing) {
@@ -23,7 +23,7 @@ export const renderBoard = (ctx, shapes, activeShape, selectedId) => {
     if (shape.shapeId === selectedId) drawSelection(ctx, shape)
   })
 
-  // draw in-progress preview shape
+  // draw in-progress preview
   if (activeShape) drawShape(ctx, activeShape)
 }
 
@@ -37,7 +37,6 @@ const drawShape = (ctx, shape) => {
   switch (shape.type) {
     case 'rect': {
       ctx.beginPath()
-      // use roundRect for modern look — 4px radius
       ctx.roundRect(shape.x, shape.y, shape.width, shape.height, 4)
       ctx.stroke()
       if (shape.fillColor && shape.fillColor !== 'transparent') ctx.fill()
@@ -49,6 +48,7 @@ const drawShape = (ctx, shape) => {
       const cy = shape.y + shape.height / 2
       const rx = Math.abs(shape.width / 2)
       const ry = Math.abs(shape.height / 2)
+      if (rx === 0 || ry === 0) break
       ctx.beginPath()
       ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
       ctx.stroke()
@@ -65,11 +65,15 @@ const drawShape = (ctx, shape) => {
     }
 
     case 'pencil': {
-      if (!shape.points || shape.points.length < 2) break
+      // points can come as plain objects or mongoose subdocuments
+      // normalize both cases
+      const pts = shape.points
+      if (!pts || pts.length < 2) break
+
       ctx.beginPath()
-      ctx.moveTo(shape.points[0].x, shape.points[0].y)
-      for (let i = 1; i < shape.points.length; i++) {
-        ctx.lineTo(shape.points[i].x, shape.points[i].y)
+      ctx.moveTo(pts[0].x, pts[0].y)
+      for (let i = 1; i < pts.length; i++) {
+        ctx.lineTo(pts[i].x, pts[i].y)
       }
       ctx.stroke()
       break
@@ -79,7 +83,6 @@ const drawShape = (ctx, shape) => {
   }
 }
 
-// dashed purple selection highlight
 const drawSelection = (ctx, shape) => {
   ctx.save()
   ctx.strokeStyle = '#7c3aed'
@@ -94,13 +97,22 @@ const drawSelection = (ctx, shape) => {
     const cx = shape.x + shape.width / 2
     const cy = shape.y + shape.height / 2
     ctx.beginPath()
-    ctx.ellipse(cx, cy, Math.abs(shape.width / 2) + pad, Math.abs(shape.height / 2) + pad, 0, 0, Math.PI * 2)
+    ctx.ellipse(
+      cx, cy,
+      Math.abs(shape.width / 2) + pad,
+      Math.abs(shape.height / 2) + pad,
+      0, 0, Math.PI * 2
+    )
     ctx.stroke()
-  } else if (shape.type === 'line') {
-    // for lines draw a highlight along the line
+  } else if (shape.type === 'line' || shape.type === 'pencil') {
     ctx.beginPath()
-    ctx.moveTo(shape.x, shape.y)
-    ctx.lineTo(shape.x + shape.width, shape.y + shape.height)
+    if (shape.type === 'pencil' && shape.points?.length > 1) {
+      ctx.moveTo(shape.points[0].x, shape.points[0].y)
+      shape.points.forEach(p => ctx.lineTo(p.x, p.y))
+    } else {
+      ctx.moveTo(shape.x, shape.y)
+      ctx.lineTo(shape.x + shape.width, shape.y + shape.height)
+    }
     ctx.stroke()
   } else {
     const x = Math.min(shape.x, shape.x + shape.width)
