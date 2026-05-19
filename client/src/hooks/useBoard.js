@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useDispatch } from 'react-redux'
 import { socket } from '../socket/socketClient.js'
 import { EVENTS } from '../socket/events.js'
@@ -9,11 +9,11 @@ export const useBoard = (boardId) => {
   const dispatch = useDispatch()
   const [loading, setLoading] = useState(true)
 
-  const joinBoard = () => {
+  const joinBoard = useCallback(() => {
     if (!boardId) return
     setLoading(true)
     socket.emit(EVENTS.JOIN_BOARD, { boardId })
-  }
+  }, [boardId])
 
   useEffect(() => {
     if (!boardId) return
@@ -33,7 +33,7 @@ export const useBoard = (boardId) => {
       socket.off(EVENTS.INIT_BOARD)
       socket.off('connect', joinBoard)
     }
-  }, [boardId])
+  }, [boardId, dispatch, joinBoard])
 
   return { loading }
 }

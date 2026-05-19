@@ -1,45 +1,46 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { shapesSelectors, setAllShapes } from '../store/shapesSlice.js'
 import { socket } from '../socket/socketClient.js'
 import { EVENTS } from '../socket/events.js'
 
 export const useHistory = (boardId) => {
-  const dispatch   = useDispatch()
-  const shapes     = useSelector(shapesSelectors.selectAll)
-  const past       = useRef([])
-  const shapesRef  = useRef(shapes)
-
-  useEffect(() => { shapesRef.current = shapes }, [shapes])
-
-  const saveSnapshot = () => {
-    past.current.push([...shapesRef.current])
-    if (past.current.length > 50) past.current.shift()
-  }
+  const dispatch  = useDispatch()
+  const shapes    = useSelector(shapesSelectors.selectAll)
+  const past      = useRef([])
+  const shapesRef = useRef(shapes)
 
   useEffect(() => {
-    const handleKey = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
-        e.preventDefault()
-        if (past.current.length === 0) return
-        const previous = past.current.pop()
+    shapesRef.current = shapes
+  }, [shapes])
 
-        // find what shape was added (is in current but not in previous)
-        const prevIds   = new Set(previous.map(s => s.shapeId))
-        const currentIds = new Set(shapesRef.current.map(s => s.shapeId))
-        const addedIds  = [...currentIds].filter(id => !prevIds.has(id))
+  const saveSnapshot = useCallback(() => {
+    past.current.push([...shapesRef.current])
+    if (past.current.length > 50) past.current.shift()
+  }, [])
 
-        // emit delete for each shape that was added
-        addedIds.forEach(shapeId => {
-          socket.emit(EVENTS.DELETE_SHAPE, { boardId, shapeId })
-        })
+  const handleUndo = useCallback((e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+      e.preventDefault()
+      if (past.current.length === 0) return
+      const previous = past.current.pop()
 
-        dispatch(setAllShapes(previous))
-      }
+      const prevIds    = new Set(previous.map(s => s.shapeId))
+      const currentIds = new Set(shapesRef.current.map(s => s.shapeId))
+      const addedIds   = [...currentIds].filter(id => !prevIds.has(id))
+
+      addedIds.forEach(shapeId => {
+        socket.emit(EVENTS.DELETE_SHAPE, { boardId, shapeId })
+      })
+
+      dispatch(setAllShapes(previous))
     }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [boardId])
+  }, [boardId, dispatch])
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleUndo)
+    return () => window.removeEventListener('keydown', handleUndo)
+  }, [handleUndo])
 
   return { saveSnapshot }
 }

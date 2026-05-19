@@ -1,45 +1,39 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useDispatch } from 'react-redux'
 import { socket } from '../socket/socketClient.js'
 import { EVENTS } from '../socket/events.js'
-import { updateCursor, removeCursor } from '../store/cursorSlice.js'
+import { updateCursor } from '../store/cursorSlice.js'
 
 export const useCursors = (canvasRef, boardId) => {
-    const dispatch = useDispatch()
-    const lastEmit = useRef(0)
+  const dispatch   = useDispatch()
+  const lastEmit   = useRef(0)
 
-    useEffect(() => {
-        const canvas = canvasRef.current
-        if (!canvas || !boardId) return
+  const handleCursorUpdate = useCallback((data) => {
+    dispatch(updateCursor(data))
+  }, [dispatch])
 
-        const handleMouseMove = (e) => {
-            const now = Date.now()
-            if (now - lastEmit.current < 30) return
-            lastEmit.current = now
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !boardId) return
 
-            const rect = canvas.getBoundingClientRect()
-            const x = e.clientX - rect.left
-            const y = e.clientY - rect.top
+    const handleMouseMove = (e) => {
+      const now = Date.now()
+      if (now - lastEmit.current < 30) return
+      lastEmit.current = now
 
-            socket.emit(EVENTS.CURSOR_MOVE, { boardId, x, y })
-        }
+      const rect = canvas.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
 
-        canvas.addEventListener('mousemove', handleMouseMove)
+      socket.emit(EVENTS.CURSOR_MOVE, { boardId, x, y })
+    }
 
-        socket.on(EVENTS.CURSOR_UPDATE, (data) => {
-            dispatch(updateCursor(data))
-        })
+    canvas.addEventListener('mousemove', handleMouseMove)
+    socket.on(EVENTS.CURSOR_UPDATE, handleCursorUpdate)
 
-        // expire cursors older than 3 seconds
-        const interval = setInterval(() => {
-            const now = Date.now()
-            // handled in component via selector
-        }, 2000)
-
-        return () => {
-            canvas.removeEventListener('mousemove', handleMouseMove)
-            socket.off(EVENTS.CURSOR_UPDATE)
-            clearInterval(interval)
-        }
-    }, [boardId])
+    return () => {
+      canvas.removeEventListener('mousemove', handleMouseMove)
+      socket.off(EVENTS.CURSOR_UPDATE, handleCursorUpdate)
+    }
+  }, [boardId, canvasRef, dispatch, handleCursorUpdate])
 }
