@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { socket } from '../socket/socketClient.js'
 import { EVENTS } from '../socket/events.js'
@@ -6,21 +6,34 @@ import { setAllShapes } from '../store/shapesSlice.js'
 import { setBoard } from '../store/boardSlice.js'
 
 export const useBoard = (boardId) => {
-    const dispatch = useDispatch()
+  const dispatch = useDispatch()
+  const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        if (!boardId) return
+  const joinBoard = () => {
+    if (!boardId) return
+    setLoading(true)
+    socket.emit(EVENTS.JOIN_BOARD, { boardId })
+  }
 
-        socket.emit(EVENTS.JOIN_BOARD, { boardId })
+  useEffect(() => {
+    if (!boardId) return
 
-        socket.on(EVENTS.INIT_BOARD, ({ shapes }) => {
-            dispatch(setAllShapes(shapes))
-            dispatch(setBoard({ boardId }))
-        })
+    joinBoard()
 
-        return () => {
-            socket.emit(EVENTS.LEAVE_BOARD, { boardId })
-            socket.off(EVENTS.INIT_BOARD)
-        }
-    }, [boardId])
+    socket.on(EVENTS.INIT_BOARD, ({ shapes }) => {
+      dispatch(setAllShapes(shapes))
+      dispatch(setBoard({ boardId }))
+      setLoading(false)
+    })
+
+    socket.on('connect', joinBoard)
+
+    return () => {
+      socket.emit(EVENTS.LEAVE_BOARD, { boardId })
+      socket.off(EVENTS.INIT_BOARD)
+      socket.off('connect', joinBoard)
+    }
+  }, [boardId])
+
+  return { loading }
 }

@@ -27,3 +27,7 @@ export const deleteShape = async (shapeId, boardId) => {
 export const getBoardShapes = async (boardId) => {
     return await Shape.findActiveByBoard(boardId)
 }
+
+export const clearBoard = async (boardId) => {
+  await Shape.updateMany({ boardId }, { isDeleted: true })
+}
