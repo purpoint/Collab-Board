@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const SERVER = process.env.REACT_APP_SERVER_URL || 'http://localhost:8080'
+
 export const HomePage = () => {
   const [username, setUsername]     = useState('')
   const [password, setPassword]     = useState('')
@@ -15,7 +17,7 @@ export const HomePage = () => {
 
   const handleAuth = async () => {
     const endpoint = isRegister ? 'register' : 'login'
-    const res  = await fetch(`http://localhost:8080/api/auth/${endpoint}`, {
+    const res  = await fetch(`${SERVER}/api/auth/${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
@@ -34,7 +36,7 @@ export const HomePage = () => {
     try {
       const token = await handleAuth()
       if (!token) return
-      const res  = await fetch('http://localhost:8080/api/boards', {
+      const res  = await fetch(`${SERVER}/api/boards`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: boardName.trim() })
@@ -54,7 +56,7 @@ export const HomePage = () => {
     try {
       const token = await handleAuth()
       if (!token) return
-      const res = await fetch(`http://localhost:8080/api/boards/${trimmed}/join`, {
+      const res = await fetch(`${SERVER}/api/boards/${trimmed}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
       })
@@ -140,7 +142,6 @@ export const HomePage = () => {
 
         {/* logo */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          {/* icon */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: '48px', height: '48px', borderRadius: '14px', marginBottom: '14px',
@@ -150,7 +151,6 @@ export const HomePage = () => {
             fontSize: '22px',
           }}>⬡</div>
 
-          {/* title */}
           <div style={{
             fontFamily: 'Cabinet Grotesk, sans-serif',
             fontSize: '26px', fontWeight: '900',
@@ -159,7 +159,6 @@ export const HomePage = () => {
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>CollabBoard</div>
 
-          {/* subtitle */}
           <div style={{
             fontSize: '10px', letterSpacing: '2.5px',
             color: '#1e3050',
@@ -191,7 +190,7 @@ export const HomePage = () => {
           </div>
         )}
 
-        {/* username + password */}
+        {/* credentials */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
           <input
             style={inp('username')} placeholder="username"
