@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 
 const SERVER = process.env.REACT_APP_SERVER_URL || 'http://localhost:8080'
 
+// shown when the free Render backend is still waking up (takes 30–60s after idling)
+const SERVER_DOWN_MSG = 'Server is waking up (free hosting). Please try again in a minute.'
+
 export const HomePage = () => {
   const [username, setUsername]     = useState('')
   const [password, setPassword]     = useState('')
@@ -44,7 +47,7 @@ export const HomePage = () => {
       const data = await res.json()
       if (!res.ok) return setError(data.error)
       navigate(`/board/${data.board.boardId}`)
-    } catch { setError('Cannot reach server.') }
+    } catch { setError(SERVER_DOWN_MSG) }
     finally  { setLoading(false) }
   }
 
@@ -63,7 +66,7 @@ export const HomePage = () => {
       const data = await res.json()
       if (!res.ok) return setError(data.error || 'Board not found')
       navigate(`/board/${trimmed}`)
-    } catch { setError('Cannot reach server.') }
+    } catch { setError(SERVER_DOWN_MSG) }
     finally  { setLoading(false) }
   }
 
@@ -93,6 +96,7 @@ export const HomePage = () => {
       minHeight: '100vh', display: 'flex',
       alignItems: 'center', justifyContent: 'center',
       background: 'var(--void)', position: 'relative', overflow: 'hidden',
+      padding: '16px', // keeps the card off the screen edges on phones
     }}>
       {/* grid */}
       <div style={{
@@ -118,9 +122,9 @@ export const HomePage = () => {
         pointerEvents: 'none',
       }} />
 
-      {/* card */}
+      {/* card — full width on phones, max 380px on larger screens */}
       <div className="fade-up" style={{
-        position: 'relative', zIndex: 10, width: '380px',
+        position: 'relative', zIndex: 10, width: '100%', maxWidth: '380px',
         background: 'linear-gradient(160deg, var(--elevated) 0%, var(--deep) 100%)',
         border: '1px solid var(--border-2)',
         borderRadius: '16px', padding: '32px',
