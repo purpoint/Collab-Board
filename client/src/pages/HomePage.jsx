@@ -1,10 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const SERVER = process.env.REACT_APP_SERVER_URL || 'http://localhost:8080'
 
-// shown when the free Render backend is still waking up (takes 30–60s after idling)
-const SERVER_DOWN_MSG = 'Server is waking up (free hosting). Please try again in a minute.'
+// Free Render backends sleep after 15 min idle and take 30–60s to wake.
+// This retries requests while the server is waking instead of failing.
+const fetchWithRetry = async (url, options = {}, onWaiting) => {
+  const deadline = Date.now() + 90000 // give up after 90 seconds
+  while (true) {
+    try {
+      const res = await fetch(url, options)
+      // 502/503 = Render is still waking the server up
+      if (res.status !== 502 && res.status !== 503) return res
+    } catch {
+      // network error = server not reachable yet, keep waiting
+    }
+    if (Date.now() > deadline) throw new Error('timeout')
+    onWaiting?.()
+    await new Promise(r => setTimeout(r, 4000))
+  }
+}
 
 export const HomePage = () => {
   const [username, setUsername]     = useState('')
@@ -15,16 +30,36 @@ export const HomePage = () => {
   const [mode, setMode]             = useState('create')
   const [error, setError]           = useState('')
   const [loading, setLoading]       = useState(false)
+  const [waking, setWaking]         = useState(false)
   const [focused, setFocused]       = useState(null)
+  const [serverStatus, setServerStatus] = useState('checking') // checking | waking | ready
   const navigate = useNavigate()
+
+  // Wake the backend the moment the page opens, so it's ready by the time
+  // the visitor has typed their username and password.
+  useEffect(() => {
+    let cancelled = false
+    const slowTimer = setTimeout(() => { if (!cancelled) setServerStatus('waking') }, 1500)
+    fetchWithRetry(`${SERVER}/health`)
+      .then(() => { if (!cancelled) setServerStatus('ready') })
+      .catch(() => {})
+      .finally(() => clearTimeout(slowTimer))
+    return () => { cancelled = true; clearTimeout(slowTimer) }
+  }, [])
+
+  const post = (path, body, token) =>
+    fetchWithRetry(`${SERVER}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    }, () => setWaking(true))
 
   const handleAuth = async () => {
     const endpoint = isRegister ? 'register' : 'login'
-    const res  = await fetch(`${SERVER}/api/auth/${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    })
+    const res  = await post(`/api/auth/${endpoint}`, { username, password })
     const data = await res.json()
     if (!res.ok) { setError(data.error); return null }
     localStorage.setItem('token', data.token)
@@ -39,16 +74,12 @@ export const HomePage = () => {
     try {
       const token = await handleAuth()
       if (!token) return
-      const res  = await fetch(`${SERVER}/api/boards`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: boardName.trim() })
-      })
+      const res  = await post('/api/boards', { name: boardName.trim() }, token)
       const data = await res.json()
       if (!res.ok) return setError(data.error)
       navigate(`/board/${data.board.boardId}`)
-    } catch { setError(SERVER_DOWN_MSG) }
-    finally  { setLoading(false) }
+    } catch { setError('Server is taking too long to wake up. Please try again in a minute.') }
+    finally  { setLoading(false); setWaking(false) }
   }
 
   const handleJoin = async () => {
@@ -59,15 +90,12 @@ export const HomePage = () => {
     try {
       const token = await handleAuth()
       if (!token) return
-      const res = await fetch(`${SERVER}/api/boards/${trimmed}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
-      })
+      const res  = await post(`/api/boards/${trimmed}/join`, null, token)
       const data = await res.json()
       if (!res.ok) return setError(data.error || 'Board not found')
       navigate(`/board/${trimmed}`)
-    } catch { setError(SERVER_DOWN_MSG) }
-    finally  { setLoading(false) }
+    } catch { setError('Server is taking too long to wake up. Please try again in a minute.') }
+    finally  { setLoading(false); setWaking(false) }
   }
 
   const inp = (name) => ({
@@ -90,6 +118,12 @@ export const HomePage = () => {
     fontWeight: '500', letterSpacing: '1px', textTransform: 'uppercase',
     cursor: 'pointer', transition: 'all 0.2s',
   })
+
+  const statusText = {
+    checking: '',
+    waking:   'waking up server… (free hosting, up to a minute)',
+    ready:    'server ready',
+  }[serverStatus]
 
   return (
     <div style={{
@@ -156,6 +190,22 @@ export const HomePage = () => {
           <div style={{ fontSize: '9px', letterSpacing: '3px', color: 'var(--text-3)' }}>
             REAL-TIME · MULTI-USER · CANVAS
           </div>
+
+          {/* server status — tells the visitor what's happening during a cold start */}
+          {statusText && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              marginTop: '12px', fontSize: '9px', letterSpacing: '0.5px',
+              color: serverStatus === 'ready' ? 'var(--green)' : 'var(--amber)',
+            }}>
+              <span style={{
+                width: '6px', height: '6px', borderRadius: '50%',
+                background: serverStatus === 'ready' ? 'var(--green)' : 'var(--amber)',
+                animation: serverStatus === 'ready' ? 'none' : 'pulse 1.5s infinite',
+              }} />
+              {statusText}
+            </div>
+          )}
         </div>
 
         {/* auth tabs */}
@@ -218,36 +268,3 @@ export const HomePage = () => {
             onKeyDown={e => e.key === 'Enter' && (mode === 'create' ? handleCreate() : handleJoin())}
           />
           {mode === 'join' && (
-            <p style={{ fontSize: '9px', color: 'var(--text-3)', marginTop: '5px', paddingLeft: '2px' }}>
-              copy the board id from the url after /board/
-            </p>
-          )}
-        </div>
-
-        {/* CTA */}
-        <div className="fade-up-6">
-          <button
-            onClick={mode === 'create' ? handleCreate : handleJoin}
-            disabled={loading}
-            style={{
-              width: '100%', padding: '13px',
-              background: loading ? 'var(--elevated)' : 'linear-gradient(135deg, #0088cc, #00c8ff, #8855ff)',
-              border: loading ? '1px solid var(--border-1)' : 'none',
-              borderRadius: '10px',
-              color: loading ? 'var(--text-3)' : '#fff',
-              fontSize: '11px', fontFamily: 'JetBrains Mono, monospace',
-              fontWeight: '600', letterSpacing: '2px', textTransform: 'uppercase',
-              cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.25s',
-              boxShadow: loading ? 'none' : '0 4px 24px rgba(0,200,255,0.3)',
-            }}
-            onMouseEnter={e => { if (!loading) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,200,255,0.4)' }}}
-            onMouseLeave={e => { if (!loading) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,200,255,0.3)' }}}
-          >
-            {loading ? '⟳  connecting...' : mode === 'create' ? '⬡  Create & Enter' : '→  Enter Board'}
-          </button>
-        </div>
-
-      </div>
-    </div>
-  )
-}
