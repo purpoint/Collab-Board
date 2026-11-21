@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 const SERVER = process.env.REACT_APP_SERVER_URL || 'http://localhost:8080'
 
-// Free Render backends sleep after 15 min idle and take 30–60s to wake.
+// Free Render backends sleep after 15 min idle and take 30-60s to wake.
 // This retries requests while the server is waking instead of failing.
 const fetchWithRetry = async (url, options = {}, onWaiting) => {
   const deadline = Date.now() + 90000 // give up after 90 seconds
@@ -16,7 +16,7 @@ const fetchWithRetry = async (url, options = {}, onWaiting) => {
       // network error = server not reachable yet, keep waiting
     }
     if (Date.now() > deadline) throw new Error('timeout')
-    onWaiting?.()
+    if (onWaiting) onWaiting()
     await new Promise(r => setTimeout(r, 4000))
   }
 }
@@ -35,7 +35,7 @@ export const HomePage = () => {
   const [serverStatus, setServerStatus] = useState('checking') // checking | waking | ready
   const navigate = useNavigate()
 
-  // Wake the backend the moment the page opens, so it's ready by the time
+  // Wake the backend the moment the page opens, so it is ready by the time
   // the visitor has typed their username and password.
   useEffect(() => {
     let cancelled = false
@@ -111,8 +111,8 @@ export const HomePage = () => {
 
   const seg = (active, col = 'var(--cyan)') => ({
     flex: 1, padding: '8px 0', borderRadius: '6px', border: 'none',
-    background: active ? `rgba(0,200,255,0.08)` : 'transparent',
-    outline: active ? `1px solid rgba(0,200,255,0.3)` : '1px solid transparent',
+    background: active ? 'rgba(0,200,255,0.08)' : 'transparent',
+    outline: active ? '1px solid rgba(0,200,255,0.3)' : '1px solid transparent',
     color: active ? col : 'var(--text-3)',
     fontSize: '10px', fontFamily: 'JetBrains Mono, monospace',
     fontWeight: '500', letterSpacing: '1px', textTransform: 'uppercase',
@@ -121,31 +121,28 @@ export const HomePage = () => {
 
   const statusText = {
     checking: '',
-    waking:   'waking up server… (free hosting, up to a minute)',
+    waking:   'waking up server... (free hosting, up to a minute)',
     ready:    'server ready',
   }[serverStatus]
+
+  const buttonText = waking
+    ? 'waking server...'
+    : loading
+      ? 'connecting...'
+      : mode === 'create' ? 'Create & Enter' : 'Enter Board'
 
   return (
     <div style={{
       minHeight: '100vh', display: 'flex',
       alignItems: 'center', justifyContent: 'center',
       background: 'var(--void)', position: 'relative', overflow: 'hidden',
-      padding: '16px', // keeps the card off the screen edges on phones
+      padding: '16px',
     }}>
       {/* grid */}
       <div style={{
         position: 'absolute', inset: 0,
-        backgroundImage: `
-          linear-gradient(rgba(14,31,48,0.4) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(14,31,48,0.4) 1px, transparent 1px)
-        `,
+        backgroundImage: 'linear-gradient(rgba(14,31,48,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(14,31,48,0.4) 1px, transparent 1px)',
         backgroundSize: '44px 44px',
-      }} />
-
-      {/* scan lines */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 3px)',
       }} />
 
       {/* glow */}
@@ -156,34 +153,26 @@ export const HomePage = () => {
         pointerEvents: 'none',
       }} />
 
-      {/* card — full width on phones, max 380px on larger screens */}
+      {/* card */}
       <div className="fade-up" style={{
         position: 'relative', zIndex: 10, width: '100%', maxWidth: '380px',
         background: 'linear-gradient(160deg, var(--elevated) 0%, var(--deep) 100%)',
         border: '1px solid var(--border-2)',
         borderRadius: '16px', padding: '32px',
-        boxShadow: '0 0 0 1px rgba(0,200,255,0.03), 0 32px 80px rgba(0,0,0,0.8), var(--shadow-cyan)',
+        boxShadow: '0 32px 80px rgba(0,0,0,0.8), var(--shadow-cyan)',
       }}>
 
-        {/* top glow line */}
-        <div style={{
-          position: 'absolute', top: 0, left: '15%', right: '15%', height: '1px',
-          background: 'linear-gradient(90deg, transparent, var(--cyan), transparent)',
-        }} />
-
         {/* logo */}
-        <div className="fade-up-1" style={{ textAlign: 'center', marginBottom: '24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: '44px', height: '44px', borderRadius: '12px', marginBottom: '12px',
             background: 'linear-gradient(135deg, rgba(0,200,255,0.15), rgba(136,85,255,0.15))',
-            border: '1px solid rgba(0,200,255,0.3)',
-            boxShadow: '0 0 20px rgba(0,200,255,0.15)', fontSize: '20px',
+            border: '1px solid rgba(0,200,255,0.3)', fontSize: '20px',
           }}>⬡</div>
           <div style={{
             fontFamily: 'Space Grotesk, sans-serif',
-            fontSize: '24px', fontWeight: '700',
-            letterSpacing: '-0.5px', marginBottom: '4px',
+            fontSize: '24px', fontWeight: '700', marginBottom: '4px',
             background: 'linear-gradient(135deg, #ffffff, #6888aa)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>CollabBoard</div>
@@ -191,37 +180,30 @@ export const HomePage = () => {
             REAL-TIME · MULTI-USER · CANVAS
           </div>
 
-          {/* server status — tells the visitor what's happening during a cold start */}
+          {/* server status */}
           {statusText && (
             <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              marginTop: '12px', fontSize: '9px', letterSpacing: '0.5px',
+              marginTop: '12px', fontSize: '9px',
               color: serverStatus === 'ready' ? 'var(--green)' : 'var(--amber)',
             }}>
-              <span style={{
-                width: '6px', height: '6px', borderRadius: '50%',
-                background: serverStatus === 'ready' ? 'var(--green)' : 'var(--amber)',
-                animation: serverStatus === 'ready' ? 'none' : 'pulse 1.5s infinite',
-              }} />
-              {statusText}
+              ● {statusText}
             </div>
           )}
         </div>
 
         {/* auth tabs */}
-        <div className="fade-up-2" style={{
+        <div style={{
           display: 'flex', gap: '3px', padding: '3px',
           background: 'var(--void)', borderRadius: '8px',
           border: '1px solid var(--border-1)', marginBottom: '16px',
         }}>
-          <button style={seg(isRegister)}  onClick={() => { setIsRegister(true);  setError('') }}>Register</button>
+          <button style={seg(isRegister)} onClick={() => { setIsRegister(true); setError('') }}>Register</button>
           <button style={seg(!isRegister)} onClick={() => { setIsRegister(false); setError('') }}>Login</button>
         </div>
 
         {/* error */}
         {error && (
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
             background: 'rgba(255,51,85,0.06)', border: '1px solid rgba(255,51,85,0.2)',
             borderRadius: '7px', padding: '9px 12px', marginBottom: '12px',
             color: 'var(--red)', fontSize: '11px',
@@ -229,42 +211,65 @@ export const HomePage = () => {
         )}
 
         {/* inputs */}
-        <div className="fade-up-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-          <input style={inp('username')} placeholder="username" value={username} type="text" autoComplete="off"
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+          <input
+            style={inp('username')} placeholder="username" value={username} type="text" autoComplete="off"
             onChange={e => setUsername(e.target.value)}
             onFocus={() => setFocused('username')} onBlur={() => setFocused(null)}
           />
-          <input style={inp('password')} placeholder="password" value={password} type="password"
+          <input
+            style={inp('password')} placeholder="password" value={password} type="password"
             onChange={e => setPassword(e.target.value)}
             onFocus={() => setFocused('password')} onBlur={() => setFocused(null)}
           />
         </div>
 
-        {/* divider */}
-        <div className="fade-up-4" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border-1)' }} />
-          <span style={{ fontSize: '8px', color: 'var(--text-3)', letterSpacing: '2px' }}>BOARD</span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border-1)' }} />
-        </div>
-
         {/* board mode */}
-        <div className="fade-up-4" style={{
+        <div style={{
           display: 'flex', gap: '3px', padding: '3px',
           background: 'var(--void)', borderRadius: '8px',
           border: '1px solid var(--border-1)', marginBottom: '10px',
         }}>
           <button style={seg(mode === 'create', 'var(--green)')} onClick={() => { setMode('create'); setError('') }}>+ Create</button>
-          <button style={seg(mode === 'join',   'var(--green)')} onClick={() => { setMode('join');   setError('') }}>→ Join</button>
+          <button style={seg(mode === 'join', 'var(--green)')} onClick={() => { setMode('join'); setError('') }}>→ Join</button>
         </div>
 
         {/* board input */}
-        <div className="fade-up-5" style={{ marginBottom: '16px' }}>
+        <div style={{ marginBottom: '16px' }}>
           <input
             style={inp('board')}
             placeholder={mode === 'create' ? 'board name...' : 'paste board id...'}
             value={mode === 'create' ? boardName : boardId}
-            onChange={e => mode === 'create' ? setBoardName(e.target.value) : setBoardId(e.target.value)}
+            onChange={e => (mode === 'create' ? setBoardName(e.target.value) : setBoardId(e.target.value))}
             onFocus={() => setFocused('board')} onBlur={() => setFocused(null)}
-            onKeyDown={e => e.key === 'Enter' && (mode === 'create' ? handleCreate() : handleJoin())}
+            onKeyDown={e => { if (e.key === 'Enter') { if (mode === 'create') handleCreate(); else handleJoin() } }}
           />
           {mode === 'join' && (
+            <p style={{ fontSize: '9px', color: 'var(--text-3)', marginTop: '5px' }}>
+              copy the board id from the url after /board/
+            </p>
+          )}
+        </div>
+
+        {/* main button */}
+        <button
+          onClick={mode === 'create' ? handleCreate : handleJoin}
+          disabled={loading}
+          style={{
+            width: '100%', padding: '13px',
+            background: loading ? 'var(--elevated)' : 'linear-gradient(135deg, #0088cc, #00c8ff, #8855ff)',
+            border: 'none', borderRadius: '10px',
+            color: loading ? 'var(--text-3)' : '#fff',
+            fontSize: '11px', fontFamily: 'JetBrains Mono, monospace',
+            fontWeight: '600', letterSpacing: '2px', textTransform: 'uppercase',
+            cursor: loading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {buttonText}
+        </button>
+
+      </div>
+    </div>
+  )
+}
+
