@@ -4,11 +4,23 @@ import { socket } from '../socket/socketClient.js'
 import { EVENTS } from '../socket/events.js'
 import { addShape, updateShape, removeShape, setAllShapes } from '../store/shapesSlice.js'
 
+// MEASUREMENT: remembers when each shape was sent, to time the server round trip
+const sentAt = new Map()
+
 export const useShapes = (boardId) => {
   const dispatch = useDispatch()
 
-  const handleShapeAdded   = useCallback(({ shape })   => dispatch(addShape(shape)),    [dispatch])
-  const handleShapeUpdated = useCallback(({ shape })   => dispatch(updateShape(shape)), [dispatch])
+  const handleShapeAdded = useCallback(({ shape }) => {
+    // MEASUREMENT: if this is a shape we drew, log how long the round trip took
+    if (sentAt.has(shape.shapeId)) {
+      const ms = Math.round(performance.now() - sentAt.get(shape.shapeId))
+      console.log(`[SYNC] ${shape.type} round trip: ${ms} ms`)
+      sentAt.delete(shape.shapeId)
+    }
+    dispatch(addShape(shape))
+  }, [dispatch])
+
+  const handleShapeUpdated = useCallback(({ shape })   => dispatch(updateShape(shape)),   [dispatch])
   const handleShapeDeleted = useCallback(({ shapeId }) => dispatch(removeShape(shapeId)), [dispatch])
   const handleBoardCleared = useCallback(() => dispatch(setAllShapes([])), [dispatch])
 
@@ -27,6 +39,7 @@ export const useShapes = (boardId) => {
   }, [handleShapeAdded, handleShapeUpdated, handleShapeDeleted, handleBoardCleared])
 
   const emitDrawShape = (shape) => {
+    sentAt.set(shape.shapeId, performance.now()) // MEASUREMENT: start the timer
     socket.emit(EVENTS.DRAW_SHAPE, { boardId, shape })
   }
 
