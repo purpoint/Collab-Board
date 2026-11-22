@@ -12,7 +12,7 @@ export const useCanvasEvents = (
   const [activeShape, setActiveShape] = useState(null)
   const [selectedId,  setSelectedId]  = useState(null)
 
-  // convert screen coords to world coords (accounts for zoom and pan)
+  // convert screen coords to world coords
   const toWorld = (screenX, screenY) => ({
     x: (screenX - (offsetRef?.current?.x || 0)) / (zoomRef?.current || 1),
     y: (screenY - (offsetRef?.current?.y || 0)) / (zoomRef?.current || 1),
@@ -76,17 +76,9 @@ export const useCanvasEvents = (
         pencilPoints.current = []
         return
       }
-
-      const raw        = pencilPoints.current
-      const simplified = simplifyPath(raw, 2)
-
-      // MEASUREMENT: how much RDP shrank this stroke
-      const saved = Math.round((1 - simplified.length / raw.length) * 100)
-      console.log(`[RDP] ${raw.length} → ${simplified.length} points (${saved}% fewer)`)
-
       const shape = {
         shapeId: uuidv4(), type: 'pencil',
-        points: simplified,
+        points: simplifyPath(pencilPoints.current, 2),
         strokeColor: color, strokeWidth, opacity,
         zIndex: Date.now(),
       }
